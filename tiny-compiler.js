@@ -7,25 +7,25 @@ function tokenizer(input) {
 
 	//遍历input
 	while (current < input.length) {
-		const char = input[current];
+		let char = input[current];
 		//定义词法规则
 
 		//匹配左括号
-		if (char === "(") {
-			tokens.push({ type: "paren", value: "(" });
+		if (char === '(') {
+			tokens.push({ type: 'paren', value: '(' });
 			current++;
 			continue;
 		}
 
 		//匹配右括号
-		if (char === ")") {
-			tokens.push({ type: "paren", value: ")" });
+		if (char === ')') {
+			tokens.push({ type: 'paren', value: ')' });
 			current++;
 			continue;
 		}
 
 		// 匹配空格
-		if (char === " ") {
+		if (char === ' ') {
 			// 空格不被记录
 			current++;
 			continue;
@@ -36,18 +36,18 @@ function tokenizer(input) {
 		if (NUMBERS.test(char)) {
 			// 数字不止一位，循环遍历数字
 			// 用value字符串存放数字
-			let value = "";
+			let value = '';
 			while (NUMBERS.test(char)) {
 				value += char;
 				char = input[++current];
 			}
-			tokens.push({ type: "number", value });
+			tokens.push({ type: 'number', value });
 			continue;
 		}
 
 		// 匹配字符串
 		if (char === '"') {
-			let value = "";
+			let value = '';
 			// 跳过第一个双引号
 			char = input[++current];
 			while (char !== '"') {
@@ -56,24 +56,24 @@ function tokenizer(input) {
 			}
 			// 跳过第二个双引号
 			char = input[++current];
-			tokens.push({ type: "string", value });
+			tokens.push({ type: 'string', value });
 			continue;
 		}
 
 		// 匹配函数名
 		const LETTERS = /[a-z]/i;
 		if (LETTERS.test(char)) {
-			let value = "";
+			let value = '';
 			while (LETTERS.test(char)) {
 				value += char;
 				char = input[++current];
 			}
-			tokens.push({ type: "name", value });
+			tokens.push({ type: 'name', value });
 			continue;
 		}
 
 		// 未匹配到规则，抛出错误
-		throw new TypeError("I dont know what this character is: " + char);
+		throw new TypeError('I dont know what this character is: ' + char);
 	}
 
 	return tokens;
@@ -88,32 +88,32 @@ function parser(tokens) {
 		let token = tokens[current];
 
 		//匹配number类型的token
-		if (token.type === "number") {
+		if (token.type === 'number') {
 			current++;
 			return {
-				type: "NumberLiteral",
+				type: 'NumberLiteral',
 				value: token.value,
 			};
 		}
 
 		//匹配string类型的token
-		if (token.type === "string") {
+		if (token.type === 'string') {
 			current++;
 			return {
-				type: "StringLiteral",
+				type: 'StringLiteral',
 				value: token.value,
 			};
 		}
 
 		//匹配CallExpression类型的token
 		//表达式以括号开始，接着是函数名，括以号结束
-		if (token.type === "paren" && token.value === "(") {
+		if (token.type === 'paren' && token.value === '(') {
 			//跳过 (
 			token = tokens[++current];
 
 			//创建一个AST节点，类型为CallExpression
 			let node = {
-				type: "CallExpression",
+				type: 'CallExpression',
 				name: token.value,
 				params: [],
 			};
@@ -122,8 +122,8 @@ function parser(tokens) {
 
 			//循环遍历参数，直到遇到)
 			while (
-				token.type !== "paren" ||
-				(token.type === "paren" && token.value !== ")")
+				token.type !== 'paren' ||
+				(token.type === 'paren' && token.value !== ')')
 			) {
 				node.params.push(walk());
 				token = tokens[current]; //开始递归，更新token
@@ -140,7 +140,7 @@ function parser(tokens) {
 
 	//AST的根节点
 	let ast = {
-		type: "Program",
+		type: 'Program',
 		body: [],
 	};
 
@@ -170,14 +170,14 @@ function traverser(ast, visitor) {
 
 		//继续遍历
 		switch (node.type) {
-			case "Program":
+			case 'Program':
 				traverseArray(node.body, node);
 				break;
-			case "CallExpression":
+			case 'CallExpression':
 				traverseArray(node.params, node);
 				break;
-			case "NumberLiteral":
-			case "StringLiteral":
+			case 'NumberLiteral':
+			case 'StringLiteral':
 				break;
 			default:
 				throw new TypeError(node.type);
@@ -190,7 +190,7 @@ function traverser(ast, visitor) {
 
 function transformer(ast) {
 	const newAst = {
-		type: "Program",
+		type: 'Program',
 		body: [],
 	};
 
@@ -206,7 +206,7 @@ function transformer(ast) {
 		NumberLiteral: {
 			enter(node, parent) {
 				parent._context.push({
-					type: "NumberLiteral",
+					type: 'NumberLiteral',
 					value: node.value,
 				});
 			},
@@ -216,7 +216,7 @@ function transformer(ast) {
 		StringLiteral: {
 			enter(node, parent) {
 				parent._context.push({
-					type: "StringLiteral",
+					type: 'StringLiteral',
 					value: node.value,
 				});
 			},
@@ -227,9 +227,9 @@ function transformer(ast) {
 			enter(node, parent) {
 				//创建一个新的节点，类型为CallExpression
 				let expression = {
-					type: "CallExpression",
+					type: 'CallExpression',
 					callee: {
-						type: "Identifier",
+						type: 'Identifier',
 						name: node.name,
 					},
 					arguments: [],
@@ -240,9 +240,9 @@ function transformer(ast) {
 
 				//如果父节点不是CallExpression
 				//那么就把父节点包在一个ExpressionStatement节点中
-				if (parent.type !== "CallExpression") {
+				if (parent.type !== 'CallExpression') {
 					expression = {
-						type: "ExpressionStatement",
+						type: 'ExpressionStatement',
 						expression: expression,
 					};
 				}
@@ -260,32 +260,32 @@ function transformer(ast) {
 function codeGenerator(node) {
 	switch (node.type) {
 		//如果是Program，那么就遍历它的body属性，然后用换行符连接每个节点的结果
-		case "Program":
-			return node.body.map(codeGenerator).join("\n");
+		case 'Program':
+			return node.body.map(codeGenerator).join('\n');
 
 		//如果是ExpressionStatement，那么就返回它的expression属性，并且在后面加上分号
-		case "ExpressionStatement":
-			return codeGenerator(node.expression) + ";";
+		case 'ExpressionStatement':
+			return codeGenerator(node.expression) + ';';
 
 		//如果是CallExpression，那么就返回它的callee属性，然后添加一个左括号，接着遍历它的arguments属性，用逗号连接每个节点的结果，最后加上一个右括号
-		case "CallExpression":
+		case 'CallExpression':
 			return (
 				codeGenerator(node.callee) +
-				"(" +
-				node.arguments.map(codeGenerator).join(", ") +
-				")"
+				'(' +
+				node.arguments.map(codeGenerator).join(', ') +
+				')'
 			);
 
 		//如果是Identifier，那么就返回它的name属性
-		case "Identifier":
+		case 'Identifier':
 			return node.name;
 
 		//如果是NumberLiteral，那么就返回它的value属性
-		case "NumberLiteral":
+		case 'NumberLiteral':
 			return node.value;
 
 		//如果是StringLiteral，那么就在它的value属性的两边加上双引号
-		case "StringLiteral":
+		case 'StringLiteral':
 			return '"' + node.value + '"';
 
 		//如果没有匹配到，就抛出错误
