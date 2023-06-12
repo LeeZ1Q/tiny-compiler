@@ -87,49 +87,56 @@ function parser(tokens) {
 	function walk() {
 		let token = tokens[current];
 
-    //匹配number类型的token
-    if (token.type === "number") {
-      current++;
-      return {
-        type: "NumberLiteral",
-        value: token.value,
-      };
-    }
+		//匹配number类型的token
+		if (token.type === "number") {
+			current++;
+			return {
+				type: "NumberLiteral",
+				value: token.value,
+			};
+		}
 
-    //匹配string类型的token
-    if (token.type === "string") {
-      current++;
-      return {
-        type: "StringLiteral",
-        value: token.value,
-      };
-    }
+		//匹配string类型的token
+		if (token.type === "string") {
+			current++;
+			return {
+				type: "StringLiteral",
+				value: token.value,
+			};
+		}
 
-    //匹配CallExpression类型的token
-    //表达式以括号开始，接着是函数名，括以号结束
-    if (token.type === "paren" && token.value === "(") {
-      token = tokens[++current]; //跳过(
-      
-      //创建一个AST节点，类型为CallExpression
-      let node = {
-        type: "CallExpression",
-        name: token.value,
-        params: [],
-      };
+		//匹配CallExpression类型的token
+		//表达式以括号开始，接着是函数名，括以号结束
+		if (token.type === "paren" && token.value === "(") {
+			//跳过 (
+			token = tokens[++current];
 
-      token = tokens[++current]; //跳过函数名
+			//创建一个AST节点，类型为CallExpression
+			let node = {
+				type: "CallExpression",
+				name: token.value,
+				params: [],
+			};
 
-      //循环遍历参数，直到遇到)
-      while (token.value !== ")") {
-        node.params.push(walk());
-        token = tokens[current]; //开始递归，更新token
-      }
+			token = tokens[++current]; //跳过函数名
 
-      current++; //跳过)
+			//循环遍历参数，直到遇到)
+			while (
+				token.type !== "paren" ||
+				(token.type === "paren" && token.value !== ")")
+			) {
+				node.params.push(walk());
+				token = tokens[current]; //开始递归，更新token
+			}
 
-      return node;
-	  }
-  }
+			current++; //跳过)
+
+			return node;
+		}
+
+		//抛出错误
+		throw new TypeError(token.type);
+	}
 
 	//AST的根节点
 	let ast = {
@@ -143,4 +150,40 @@ function parser(tokens) {
 	}
 
 	return ast;
+}
+
+//TRAVERSER
+function traverser(ast, visitor) {
+	//遍历数组
+	function traverseArray(array, parent) {
+		array.forEach((child) => traverseNode(child, parent));
+	}
+
+	//遍历节点
+	function traverseNode(node, parent) {
+		//获取对应的方法
+    const method = visitor[node.type];
+    //调用对应的方法
+    if(method && method.enter){
+      method.enter(node, parent);
+    }
+
+    //继续遍历
+    switch(node.type){
+      case 'Program':
+        traverseArray(node.body, node);
+        break;
+      case 'CallExpression':
+        traverseArray(node.params, node);
+        break;
+      case 'NumberLiteral':
+      case 'StringLiteral':
+        break;
+      default:
+        throw new TypeError(node.type);
+    }
+	}
+
+	//开始遍历
+	traverseNode(ast, null);
 }
