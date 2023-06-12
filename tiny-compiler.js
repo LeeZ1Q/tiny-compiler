@@ -187,3 +187,71 @@ function traverser(ast, visitor) {
 	//开始遍历
 	traverseNode(ast, null);
 }
+
+function transformer(ast) {
+  const newAst = {
+    type: 'Program',
+    body: []
+  };
+
+  // 因为visitor的内部并没有和newAst建立链接，但和旧的AST的node和parent node都有链接
+  // 所以这里可以偷懒，用旧AST的一个字段储存newAst的一个引用，这样就可以通过旧AST来访问和修改newAst了
+  ast._context = newAst.body;
+
+  //遍历
+  traverser(ast, {
+    //定义visitor的方法
+
+    //处理NumberLiteral
+    NumberLiteral: {
+      enter(node, parent) {
+        parent._context.push({
+          type: 'NumberLiteral',
+          value: node.value
+        });
+      }
+    },
+
+    //处理StringLiteral
+    StringLiteral: {
+      enter(node, parent) {
+        parent._context.push({
+          type: 'StringLiteral',
+          value: node.value
+        });
+      }
+    },
+
+    //处理CallExpression
+    CallExpression: {
+      enter(node, parent) {
+        //创建一个新的节点，类型为CallExpression
+        let expression = {
+          type: 'CallExpression',
+          callee: {
+            type: 'Identifier',
+            name: node.name
+          },
+          arguments: [],
+        };
+
+        //同样为了方便修改newAst
+        node._context = expression.arguments;
+
+        //如果父节点不是CallExpression
+        //那么就把父节点包在一个ExpressionStatement节点中
+        if(parent.type !== 'CallExpression'){
+          expression = {
+            type: 'ExpressionStatement',
+            expression: expression
+          };
+        }
+
+        //把CallExpression添加到父节点的context中
+        parent._context.push(expression);
+      }
+    }
+  });
+
+  return newAst;
+}
