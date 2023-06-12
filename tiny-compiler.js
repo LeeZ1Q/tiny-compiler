@@ -255,3 +255,38 @@ function transformer(ast) {
 
   return newAst;
 }
+
+//CODEGENERATOR
+function codeGenerator(node) {
+  switch(node.type){
+    //如果是Program，那么就遍历它的body属性，然后用换行符连接每个节点的结果
+    case 'Program':
+      return node.body.map(codeGenerator).join('\n');
+    
+    //如果是ExpressionStatement，那么就返回它的expression属性，并且在后面加上分号
+    case 'ExpressionStatement':
+      return codeGenerator(node.expression) + ';';
+
+    //如果是CallExpression，那么就返回它的callee属性，然后添加一个左括号，接着遍历它的arguments属性，用逗号连接每个节点的结果，最后加上一个右括号
+    case 'CallExpression':
+      return (
+        codeGenerator(node.callee) + '(' + node.arguments.map(codeGenerator).join(', ') + ')'      
+      );
+
+    //如果是Identifier，那么就返回它的name属性
+    case 'Identifier':
+      return node.name;
+    
+    //如果是NumberLiteral，那么就返回它的value属性
+    case 'NumberLiteral':
+      return node.value;
+    
+    //如果是StringLiteral，那么就在它的value属性的两边加上双引号
+    case 'StringLiteral':
+      return '"' + node.value + '"';
+    
+    //如果没有匹配到，就抛出错误
+    default:
+      throw new TypeError(node.type);
+  }
+}
